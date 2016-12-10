@@ -1,0 +1,23 @@
+language:
+    - cpp
+
+before_install:
+    - sudo apt-get update -qq
+    - git clone https://github.com/IntelligentHome/External.git ../External
+    - pushd ../External
+    - git submodule update --init --remote --recursive
+    - 'if [ "${TRAVIS_BRANCH}"="develop" ]; then
+        git checkout -b develop origin/develop;
+        git status;
+      fi'
+    - popd
+    - echo ${TRAVIS_BRANCH}
+
+install:
+    - sudo apt-get install -qq gcc-avr binutils-avr avr-libc
+
+script:
+    - ./build.sh -bt
+
+notifications:
+    email: false
