@@ -30,6 +30,7 @@ add_library(googletest ${GOOGLETEST_SOURCES})
 add_executable(
     OneWire_driver_unit_tests
     main.cc
+    OneWireTests.cc
     ../OneWireDriver.cpp
     )
 
