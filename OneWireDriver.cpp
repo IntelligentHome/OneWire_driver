@@ -46,8 +46,6 @@ void OneWireDriver::Get(uint8_t recv_buff[], uint16_t size) {
         recv_buff[i] = 0;
         for (uint8_t bit = 0; bit < 8; bit++)
             recv_buff[i] |= (this->GetBit() << bit);
-
-        this->wait_.wait_us(100);
     }
 }
 
@@ -71,11 +69,11 @@ void OneWireDriver::SendBit(uint8_t bit) {
 uint8_t OneWireDriver::GetBit(void) {
 
     this->gpio_.Set();
-    this->wait_.wait_us(5);
+    this->wait_.wait_us(2);
     this->gpio_.Clear();
     this->wait_.wait_us(2);
     this->gpio_.Set();
-    this->wait_.wait_us(15);
+    this->wait_.wait_us(10);
 
     return (this->gpio_.GetState() != 0);
 }
