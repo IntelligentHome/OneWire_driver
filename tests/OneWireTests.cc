@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "OneWireDriver.h"
 #include <vector>
+#include <memory>
 
 namespace test_OneWireDriver {
 
