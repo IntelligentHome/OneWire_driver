@@ -18,14 +18,14 @@ uint8_t OneWireDriver::Reset(void) {
     uint8_t is_present = 0;
 
     gpio_.Clear();
-    wait_.wait_us(500);
+    wait_.wait_us(480);
     gpio_.Set();
-    wait_.wait_us(45);
+    wait_.wait_us(65);
 
     // if received low state then slave is present.
     is_present = (gpio_.GetState() == 0);
 
-    wait_.wait_us(470);
+    wait_.wait_us(480);
 
     return is_present;
 }
@@ -33,8 +33,10 @@ uint8_t OneWireDriver::Reset(void) {
 void OneWireDriver::Send(uint8_t send_buff[], uint16_t size) {
 
     for (uint16_t i = 0; i < size; i++) {
-        for (uint16_t bit = 0; bit < 8; bit++)
+        for (uint16_t bit = 0; bit < 8; bit++) {
             this->SendBit(send_buff[i] & (1 << bit));
+            this->wait_.wait_us(100);
+        }
 
         this->wait_.wait_us(100);
     }
@@ -44,8 +46,12 @@ void OneWireDriver::Get(uint8_t recv_buff[], uint16_t size) {
 
     for (uint16_t i = 0; i < size; i++) {
         recv_buff[i] = 0;
-        for (uint8_t bit = 0; bit < 8; bit++)
+        for (uint8_t bit = 0; bit < 8; bit++) {
             recv_buff[i] |= (this->GetBit() << bit);
+            this->wait_.wait_us(100);
+        }
+
+        this->wait_.wait_us(100);
     }
 }
 
@@ -55,9 +61,9 @@ void OneWireDriver::SendAndGet(uint8_t send_buff[], uint8_t recv_buff[], uint16_
 
 void OneWireDriver::SendBit(uint8_t bit) {
     this->gpio_.Set();
-    this->wait_.wait_us(5);
+    this->wait_.wait_us(2);
     this->gpio_.Clear();
-    this->wait_.wait_us(5);
+    this->wait_.wait_us(2);
 
     if (bit)
         this->gpio_.Set();
@@ -73,7 +79,7 @@ uint8_t OneWireDriver::GetBit(void) {
     this->gpio_.Clear();
     this->wait_.wait_us(2);
     this->gpio_.Set();
-    this->wait_.wait_us(10);
+    this->wait_.wait_us(4);
 
     return (this->gpio_.GetState() != 0);
 }
