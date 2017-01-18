@@ -5,6 +5,18 @@
 
 namespace test_OneWireDriver {
 
+const int SEND_BIT_SET_US_TIME = 2;
+const int SEND_BIT_CLEAR_US_TIME = 2;
+const int SEND_BIT_WAIT_TO_END = 80;
+const int SEND_BIT_WAIT_TO_NEXT_BIT = 100;
+const int SEND_BYTE_WAIT_TO_NEXT_BYTE = 100;
+
+const int GET_BIT_RESET_US_TIME = 2;
+const int GET_BIT_CLEAR_US_TIME = 2;
+const int GET_BIT_WAIT_TO_READ_US_TIME = 4;
+const int GET_BIT_WAIT_TO_NEXT_BIT = 100;
+const int GET_BYTE_WAIT_TO_NEXT_BYTE = 100;
+
 enum DataType {
     TYPE_TIME_US = 0,
     TYPE_TIME_MS,
@@ -61,10 +73,10 @@ TEST(OneWireDriver, Reset_Slave_not_present) {
     std::vector<TestStruct> expected {
         TestStruct(TYPE_GPIO, 1),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 500),
+        TestStruct(TYPE_TIME_US, 480),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 45),
-        TestStruct(TYPE_TIME_US, 470)
+        TestStruct(TYPE_TIME_US, 65),
+        TestStruct(TYPE_TIME_US, 480)
     };
 
     std::vector<uint8_t> get_state { 1, 0 };
@@ -83,14 +95,21 @@ TEST(OneWireDriver, Reset_Slave_not_present) {
 
     EXPECT_TRUE(is_present == 0);
 
-    EXPECT_TRUE(expected.size() == received_data.size()) << "expected.size()=" \
-            << expected.size() << " != received_data.size()=" \
-            << received_data.size() << std::endl;
+    EXPECT_TRUE(expected.size() == received_data.size())                \
+            << "expected.size()=" << expected.size()                    \
+            << " != received_data.size()=" << received_data.size()      \
+            << std::endl;
 
     for (int i = 0 ; i < expected.size() && i < received_data.size() ; i++) {
-        EXPECT_TRUE(expected[i].value_ == received_data[i]->value_) << "Value exp=" << expected[i].value_ << " != recv[i]= " << received_data[i]->value_ << " at position: " << i << std::endl;
+        EXPECT_TRUE(expected[i].value_ == received_data[i]->value_)     \
+            << "Value exp=" << expected[i].value_                       \
+            << " != recv[i]= " << received_data[i]->value_              \
+            << " at position: " << i << std::endl;
 
-        EXPECT_TRUE(expected[i].type_ == received_data[i]->type_) << "Type exp=" << expected[i].type_ << " != recv[i]= " << received_data[i]->type_ << " at position: " << i << std::endl;
+        EXPECT_TRUE(expected[i].type_ == received_data[i]->type_)       \
+            << "Type exp=" << expected[i].type_                         \
+            << " != recv[i]= " << received_data[i]->type_               \
+            << " at position: " << i << std::endl;
     }
 }
 
@@ -99,10 +118,10 @@ TEST(OneWireDriver, Reset_Slave_present) {
     std::vector<TestStruct> expected {
         TestStruct(TYPE_GPIO, 1),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 500),
+        TestStruct(TYPE_TIME_US, 480),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 45),
-        TestStruct(TYPE_TIME_US, 470)
+        TestStruct(TYPE_TIME_US, 65),
+        TestStruct(TYPE_TIME_US, 480)
     };
 
     std::vector<uint8_t> get_state { 0, 1 };
@@ -121,14 +140,21 @@ TEST(OneWireDriver, Reset_Slave_present) {
 
     EXPECT_TRUE(is_present == 1);
 
-    EXPECT_TRUE(expected.size() == received_data.size()) << "expected.size()=" \
-            << expected.size() << " != received_data.size()=" \
-            << received_data.size() << std::endl;
+    EXPECT_TRUE(expected.size() == received_data.size())                \
+            << "expected.size()=" << expected.size()                    \
+            << " != received_data.size()=" << received_data.size()      \
+            << std::endl;
 
     for (int i = 0 ; i < expected.size() && i < received_data.size(); i++) {
-        EXPECT_TRUE(expected[i].value_ == received_data[i]->value_) << "Value exp=" << expected[i].value_ << " != recv= " << received_data[i]->value_ << " at position: " << i << std::endl;
+        EXPECT_TRUE(expected[i].value_ == received_data[i]->value_)     \
+            << "Value exp=" << expected[i].value_                       \
+            << " != recv= " << received_data[i]->value_                 \
+            << " at position: " << i << std::endl;
 
-        EXPECT_TRUE(expected[i].type_ == received_data[i]->type_) << "Type exp=" << expected[i].type_ << " != recv= " << received_data[i]->type_ << " at position: " << i << std::endl;
+        EXPECT_TRUE(expected[i].type_ == received_data[i]->type_)       \
+            << "Type exp=" << expected[i].type_                         \
+            << " != recv= " << received_data[i]->type_                  \
+            << " at position: " << i << std::endl;
     }
 }
 
@@ -137,136 +163,152 @@ TEST(OneWireDriver, SendData) {
     std::vector<TestStruct> expected {
         TestStruct(TYPE_GPIO, 1),
 
-                                        // First byte 0xDD
-                                        // 0b 1101 1101
-                                        //
-        TestStruct(TYPE_GPIO, 1),       // LSB (1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+                                                                // First byte 0xDD
+                                                                // 0b 1101 1101
+                                                                //
+        TestStruct(TYPE_GPIO, 1),                               // LSB (1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (0)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (0)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       //(0)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               //(0)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       //(1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               //(1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // MSB (1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // MSB (1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_TIME_US, 100),  // End of byte wait 100us
+        TestStruct(TYPE_TIME_US, SEND_BYTE_WAIT_TO_NEXT_BYTE),  // End of byte wait 100us
 
 
-                                        // Second byte 0x25
-                                        // 0b 0010 0101
-        TestStruct(TYPE_GPIO, 1),       // LSB (1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+                                                                // Second byte 0x25
+                                                                // 0b 0010 0101
+        TestStruct(TYPE_GPIO, 1),                               // LSB (1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (0)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (0)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (0)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (0)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (0)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (0)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (1)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 1),       //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (1)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // (0)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // (0)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_GPIO, 1),       // MSB (0)
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_GPIO, 0),       //
-        TestStruct(TYPE_TIME_US, 5),    //
-        TestStruct(TYPE_TIME_US, 80),   //
-        TestStruct(TYPE_GPIO, 1),       //
+        TestStruct(TYPE_GPIO, 1),                               // MSB (0)
+        TestStruct(TYPE_TIME_US, SEND_BIT_SET_US_TIME),         //
+        TestStruct(TYPE_GPIO, 0),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_CLEAR_US_TIME),       //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_END),         //
+        TestStruct(TYPE_GPIO, 1),                               //
+        TestStruct(TYPE_TIME_US, SEND_BIT_WAIT_TO_NEXT_BIT),    //
 
-        TestStruct(TYPE_TIME_US, 100)
+        TestStruct(TYPE_TIME_US, SEND_BYTE_WAIT_TO_NEXT_BYTE),  //
 
     };
 
@@ -285,14 +327,21 @@ TEST(OneWireDriver, SendData) {
 
     one_wire.Send(one_wire_send, sizeof(one_wire_send));
 
-    EXPECT_TRUE(expected.size() == received_data.size()) << "expected.size()=" \
-            << expected.size() << " != received_data.size()=" \
-            << received_data.size() << std::endl;
+    EXPECT_TRUE(expected.size() == received_data.size())            \
+            << "expected.size()=" << expected.size()                \
+            << " != received_data.size()=" << received_data.size()  \
+            << std::endl;
 
     for (int i = 0; i < expected.size() && i < received_data.size(); i++) {
-        EXPECT_TRUE(expected[i].value_ == received_data[i]->value_) << "Value exp=" << expected[i].value_ << " != recv=" << received_data[i]->value_ << " at position: " << i << std::endl;
+        EXPECT_TRUE(expected[i].value_ == received_data[i]->value_) \
+            << "Value exp=" << expected[i].value_                   \
+            << " != recv=" << received_data[i]->value_              \
+            << " at position: " << i << std::endl;
 
-        EXPECT_TRUE(expected[i].type_ == received_data[i]->type_) << "Type exp=" << expected[i].type_ << " != recv=" << received_data[i]->type_ << " at position: " << i << std::endl;
+        EXPECT_TRUE(expected[i].type_ == received_data[i]->type_)   \
+            << "Type exp=" << expected[i].type_                     \
+            << " != recv=" << received_data[i]->type_               \
+            << " at position: " << i << std::endl;
     }
 }
 
@@ -301,119 +350,138 @@ TEST(OneWireDriver, GetData) {
     std::vector<TestStruct> expected {
         TestStruct(TYPE_GPIO, 1),
 
-        TestStruct(TYPE_GPIO, 1),       // LSB
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_GPIO, 1),                               // LSB
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
-        TestStruct(TYPE_GPIO, 1),       // MSB
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_GPIO, 1),                               // MSB
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
+
+        TestStruct(TYPE_TIME_US, GET_BYTE_WAIT_TO_NEXT_BYTE),
 
 
-        TestStruct(TYPE_GPIO, 1),       // LSB
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_GPIO, 1),                               // LSB
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
-        TestStruct(TYPE_GPIO, 1),       // MSB
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_GPIO, 1),                               // MSB
+        TestStruct(TYPE_TIME_US, GET_BIT_RESET_US_TIME),
         TestStruct(TYPE_GPIO, 0),
-        TestStruct(TYPE_TIME_US, 2),
+        TestStruct(TYPE_TIME_US, GET_BIT_CLEAR_US_TIME),
         TestStruct(TYPE_GPIO, 1),
-        TestStruct(TYPE_TIME_US, 10),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_READ_US_TIME),
+        TestStruct(TYPE_TIME_US, GET_BIT_WAIT_TO_NEXT_BIT),
 
+        TestStruct(TYPE_TIME_US, GET_BYTE_WAIT_TO_NEXT_BYTE),
     };
 
     std::vector<uint8_t> expect_get_data { 0x29, 0xEA };
@@ -440,18 +508,28 @@ TEST(OneWireDriver, GetData) {
 
     one_wire.Get(one_wire_get, sizeof(one_wire_get));
 
-    EXPECT_TRUE(expected.size() == received_data.size()) << "expected.size()=" \
-            << expected.size() << " != received_data.size()=" \
-            << received_data.size() << std::endl;
+    EXPECT_TRUE(expected.size() == received_data.size())            \
+            << "expected.size()=" << expected.size()                \
+            << " != received_data.size()=" << received_data.size()  \
+            << std::endl;
 
     for (int i = 0; i < expected.size() && i < received_data.size(); i++) {
-        EXPECT_TRUE(expected[i].value_ == received_data[i]->value_) << "Value exp=" << (int)expected[i].value_ << " != recv=" << (int)received_data[i]->value_ << " at position: " << i << std::endl;
+        EXPECT_TRUE(expected[i].value_ == received_data[i]->value_) \
+                << "Value exp=" << (int)expected[i].value_          \
+                << " != recv=" << (int)received_data[i]->value_     \
+                << " at position: " << i << std::endl;
 
-        EXPECT_TRUE(expected[i].type_ == received_data[i]->type_) << "Type exp=" << expected[i].type_ << " != recv=" << received_data[i]->type_ << " at position: " << i << std::endl;
+        EXPECT_TRUE(expected[i].type_ == received_data[i]->type_)   \
+                << "Type exp=" << expected[i].type_                 \
+                << " != recv=" << received_data[i]->type_           \
+                << " at position: " << i << std::endl;
     }
 
     for (int i = 0; i < expect_get_data.size(); i++)
-        EXPECT_TRUE(expect_get_data[i] == one_wire_get[i]) << "Expected=" << (int)expect_get_data[i] << " Got=" << (int)one_wire_get[i] << " at position:" << i << std::endl;
+        EXPECT_TRUE(expect_get_data[i] == one_wire_get[i])          \
+                << "Expected=" << (int)expect_get_data[i]           \
+                << " Got=" << (int)one_wire_get[i]                  \
+                << " at position:" << i << std::endl;
 }
 
 } /* namespace test_OneWireDriver */
